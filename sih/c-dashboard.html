@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoQuest: Environmental Science Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2E8B57, #3CB371);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .game-body {
+            display: flex;
+            min-height: 500px;
+        }
+        
+        .game-board {
+            flex: 3;
+            background: #f0f8ff;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" fill="none" stroke="rgba(46, 139, 87, 0.1)" stroke-width="1"/></svg>');
+        }
+        
+        .game-cell {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-cell:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .game-cell.buildable {
+            background: rgba(173, 216, 230, 0.3);
+        }
+        
+        .game-cell.occupied {
+            background: rgba(144, 238, 144, 0.5);
+        }
+        
+        .game-cell.polluted {
+            background: rgba(205, 92, 92, 0.3);
+        }
+        
+        .game-sidebar {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .stats-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stats-title {
+            font-size: 1.2rem;
+            color: #2E8B57;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #3CB371;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+        }
+        
+        .actions-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #3CB371, #2E8B57);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .action-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .building-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-footer {
+            background: #2F4F4F;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .score-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .score-value {
+            color: #FFD700;
+            font-size: 1.4rem;
+        }
+        
+        .controls button {
+            padding: 8px 15px;
+            background: #20B2AA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .controls button:hover {
+            background: #3CB371;
+        }
+        
+        .building-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .modal h2 {
+            color: #2E8B57;
+            margin-bottom: 20px;
+        }
+        
+        .modal p {
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .modal-btn {
+            padding: 12px 25px;
+            background: #3CB371;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .modal-btn:hover {
+            background: #2E8B57;
+        }
+        
+        @media (max-width: 768px) {
+            .game-body {
+                flex-direction: column;
+            }
+            
+            .game-board {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>EcoQuest</h1>
+            <div class="subtitle">Environmental Science Adventure</div>
+        </header>
+        
+        <div class="game-body">
+            <div class="game-board">
+                <!-- Game cells will be generated by JavaScript -->
+            </div>
+            
+            <div class="game-sidebar">
+                <div class="stats-panel">
+                    <h3 class="stats-title">Campus Statistics</h3>
+                    <div class="stat-item">
+                        <span>Energy:</span>
+                        <span class="stat-value" id="energy">500 MW</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Carbon Footprint:</span>
+                        <span class="stat-value" id="carbon">15%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Biodiversity:</span>
+                        <span class="stat-value" id="biodiversity">75%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Research Points:</span>
+                        <span class="stat-value" id="research">250</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Budget:</span>
+                        <span class="stat-value" id="budget">$10,000</span>
+                    </div>
+                </div>
+                
+                <div class="actions-panel">
+                    <h3 class="stats-title">Available Actions</h3>
+                    <button class="action-btn" id="build-wind">Build Wind Turbine ($2,000)</button>
+                    <button class="action-btn" id="build-solar">Install Solar Panels ($1,500)</button>
+                    <button class="action-btn" id="build-garden">Create Green Space ($1,000)</button>
+                    <button class="action-btn" id="build-lab">Build Research Lab ($3,000)</button>
+                    <button class="action-btn" id="cleanup">Cleanup Pollution ($800)</button>
+                </div>
+                
+                <div class="building-info">
+                    <h3 class="stats-title">Selected Building</h3>
+                    <div id="building-details">
+                        <p>Select a building to view details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-footer">
+            <div class="score-display">
+                Sustainability Score: <span class="score-value" id="score">100</span>
+            </div>
+            <div class="controls">
+                <button id="next-turn">Next Semester</button>
+                <button id="reset-game">Restart Game</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="welcome-modal">
+        <div class="modal-content">
+            <h2>Welcome to EcoQuest</h2>
+            <p>As the new sustainability coordinator at your university, your mission is to transform the campus into an eco-friendly environment while balancing budget constraints.</p>
+            <p>Make strategic decisions to reduce carbon footprint, increase biodiversity, and advance environmental research!</p>
+            <button class="modal-btn" id="start-game">Begin Mission</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game state
+            const gameState = {
+                score: 100,
+                energy: 500,
+                carbon: 15,
+                biodiversity: 75,
+                research: 250,
+                budget: 10000,
+                selectedAction: null,
+                buildings: [],
+                turn: 1
+            };
+            
+            // DOM elements
+            const gameBoard = document.querySelector('.game-board');
+            const scoreElement = document.getElementById('score');
+            const energyElement = document.getElementById('energy');
+            const carbonElement = document.getElementById('carbon');
+            const biodiversityElement = document.getElementById('biodiversity');
+            const researchElement = document.getElementById('research');
+            const budgetElement = document.getElementById('budget');
+            const buildingDetails = document.getElementById('building-details');
+            const welcomeModal = document.getElementById('welcome-modal');
+            const startGameBtn = document.getElementById('start-game');
+            
+            // Initialize game board
+            function initializeGameBoard() {
+                gameBoard.innerHTML = '';
+                for (let i = 0; i < 25; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'game-cell buildable';
+                    cell.dataset.index = i;
+                    
+                    cell.addEventListener('click', () => {
+                        handleCellClick(i);
+                    });
+                    
+                    gameBoard.appendChild(cell);
+                }
+                
+                // Add some initial elements
+                const initialBuildings = [
+                    {type: 'pollution', position: 3, emoji: '🏭'},
+                    {type: 'pollution', position: 8, emoji: '🚗'},
+                    {type: 'pollution', position: 23, emoji: '🗑'},
+                    {type: 'building', position: 12, emoji: '🏫'},
+                    {type: 'building', position: 6, emoji: '🏢'}
+                ];
+                
+                initialBuildings.forEach(item => {
+                    const cell = document.querySelector(.game-cell[data-index="${item.position}"]);
+                    cell.classList.remove('buildable');
+                    cell.classList.add(item.type === 'pollution' ? 'polluted' : 'occupied');
+                    cell.innerHTML = <div class="building-icon">${item.emoji}</div>;
+                });
+            }
+            
+            // Show welcome modal
+            welcomeModal.style.display = 'flex';
+            
+            // Start game button
+            startGameBtn.addEventListener('click', function() {
+                welcomeModal.style.display = 'none';
+                updateUI();
+            });
+            
+            // Action buttons
+            document.getElementById('build-wind').addEventListener('click', function() {
+                gameState.selectedAction = 'wind';
+                updateActionButtons('wind');
+            });
+            
+            document.getElementById('build-solar').addEventListener('click', function() {
+                gameState.selectedAction = 'solar';
+                updateActionButtons('solar');
+            });
+            
+            document.getElementById('build-garden').addEventListener('click', function() {
+                gameState.selectedAction = 'garden';
+                updateActionButtons('garden');
+            });
+            
+            document.getElementById('build-lab').addEventListener('click', function() {
+                gameState.selectedAction = 'lab';
+                updateActionButtons('lab');
+            });
+            
+            document.getElementById('cleanup').addEventListener('click', function() {
+                gameState.selectedAction = 'cleanup';
+                updateActionButtons('cleanup');
+            });
+            
+            // Next turn button
+            document.getElementById('next-turn').addEventListener('click', function() {
+                nextTurn();
+            });
+            
+            // Reset game button
+            document.getElementById('reset-game').addEventListener('click', function() {
+                resetGame();
+            });
+            
+            // Handle cell click
+            function handleCellClick(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                
+                if (gameState.selectedAction === null) {
+                    // Show building details if clicked
+                    const building = gameState.buildings.find(b => b.position === index);
+                    if (building) {
+                        showBuildingDetails(building);
+                    }
+                    return;
+                }
+                
+                // Check if cell is available for building
+                if (cell.classList.contains('occupied')) {
+                    alert('This space is already occupied!');
+                    return;
+                }
+                
+                // Perform the selected action
+                switch (gameState.selectedAction) {
+                    case 'wind':
+                        if (gameState.budget >= 2000) {
+                            buildWindTurbine(index);
+                            gameState.budget -= 2000;
+                        } else {
+                            alert('Not enough budget!');
+                        }
+                        break;
+                    case 'solar':
+                        if (gameState.budget >= 1500) {
+                            buildSolarPanels(index);
+                            gameState.budget -= 1500;
+                        } else {
+                            alert('Not enough budget!');
+                        }
+                        break;
+                    case 'garden':
+                        if (gameState.budget >= 1000) {
+                            buildGarden(index);
+                            gameState.budget -= 1000;
+                        } else {
+                            alert('Not enough budget!');
+                        }
+                        break;
+                    case 'lab':
+                        if (gameState.budget >= 3000) {
+                            buildResearchLab(index);
+                            gameState.budget -= 3000;
+                        } else {
+                            alert('Not enough budget!');
+                        }
+                        break;
+                    case 'cleanup':
+                        if (cell.classList.contains('polluted')) {
+                            if (gameState.budget >= 800) {
+                                cleanupPollution(index);
+                                gameState.budget -= 800;
+                            } else {
+                                alert('Not enough budget!');
+                            }
+                        } else {
+                            alert('This space is not polluted!');
+                        }
+                        break;
+                }
+                
+                // Reset selected action
+                gameState.selectedAction = null;
+                updateActionButtons(null);
+                updateUI();
+            }
+            
+            // Building functions
+            function buildWindTurbine(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                cell.classList.remove('buildable');
+                cell.classList.add('occupied');
+                cell.innerHTML = '<div class="building-icon">🌬</div>';
+                
+                gameState.buildings.push({
+                    type: 'wind',
+                    position: index,
+                    energyOutput: 200,
+                    carbonReduction: 5
+                });
+                
+                gameState.energy += 200;
+                gameState.carbon -= 5;
+                gameState.score += 20;
+                
+                showMessage("Wind turbine installed! Clean energy generation increased.");
+            }
+            
+            function buildSolarPanels(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                cell.classList.remove('buildable');
+                cell.classList.add('occupied');
+                cell.innerHTML = '<div class="building-icon">☀</div>';
+                
+                gameState.buildings.push({
+                    type: 'solar',
+                    position: index,
+                    energyOutput: 150,
+                    carbonReduction: 3
+                });
+                
+                gameState.energy += 150;
+                gameState.carbon -= 3;
+                gameState.score += 15;
+                
+                showMessage("Solar panels installed! Harnessing the power of the sun.");
+            }
+            
+            function buildGarden(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                cell.classList.remove('buildable');
+                cell.classList.add('occupied');
+                cell.innerHTML = '<div class="building-icon">🌳</div>';
+                
+                gameState.buildings.push({
+                    type: 'garden',
+                    position: index,
+                    biodiversityIncrease: 10,
+                    carbonReduction: 2
+                });
+                
+                gameState.biodiversity += 10;
+                gameState.carbon -= 2;
+                gameState.score += 10;
+                
+                showMessage("Green space created! Biodiversity and student well-being improved.");
+            }
+            
+            function buildResearchLab(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                cell.classList.remove('buildable');
+                cell.classList.add('occupied');
+                cell.innerHTML = '<div class="building-icon">🔬</div>';
+                
+                gameState.buildings.push({
+                    type: 'lab',
+                    position: index,
+                    researchOutput: 50,
+                    carbonReduction: 1
+                });
+                
+                gameState.research += 50;
+                gameState.carbon -= 1;
+                gameState.score += 25;
+                
+                showMessage("Research lab built! Environmental innovation underway.");
+            }
+            
+            function cleanupPollution(index) {
+                const cell = document.querySelector(.game-cell[data-index="${index}"]);
+                cell.classList.remove('polluted');
+                cell.classList.add('buildable');
+                cell.innerHTML = '';
+                
+                gameState.carbon -= 10;
+                gameState.score += 15;
+                
+                showMessage("Pollution cleaned up! Campus environment improved.");
+            }
+            
+            // Show building details
+            function showBuildingDetails(building) {
+                let details = '<div class="building-icon">';
+                
+                switch (building.type) {
+                    case 'wind':
+                        details += '🌬</div><h4>Wind Turbine</h4>';
+                        details += <p>Energy Output: ${building.energyOutput} MW</p>;
+                        details += <p>Carbon Reduction: ${building.carbonReduction}%</p>;
+                        details += <p>Provides clean, renewable energy to campus</p>;
+                        break;
+                    case 'solar':
+                        details += '☀</div><h4>Solar Panels</h4>';
+                        details += <p>Energy Output: ${building.energyOutput} MW</p>;
+                        details += <p>Carbon Reduction: ${building.carbonReduction}%</p>;
+                        details += <p>Converts sunlight into electricity with zero emissions</p>;
+                        break;
+                    case 'garden':
+                        details += '🌳</div><h4>Green Space</h4>';
+                        details += <p>Biodiversity Increase: ${building.biodiversityIncrease}%</p>;
+                        details += <p>Carbon Reduction: ${building.carbonReduction}%</p>;
+                        details += <p>Improves air quality and provides habitat for wildlife</p>;
+                        break;
+                    case 'lab':
+                        details += '🔬</div><h4>Research Lab</h4>';
+                        details += <p>Research Output: ${building.researchOutput} points</p>;
+                        details += <p>Carbon Reduction: ${building.carbonReduction}%</p>;
+                        details += <p>Develops innovative solutions for environmental challenges</p>;
+                        break;
+                }
+                
+                buildingDetails.innerHTML = details;
+            }
+            
+            // Update action buttons
+            function updateActionButtons(selectedAction) {
+                const buttons = document.querySelectorAll('.action-btn');
+                buttons.forEach(button => {
+                    button.style.opacity = '1';
+                    button.style.transform = 'scale(1)';
+                });
+                
+                if (selectedAction) {
+                    const selectedButton = document.getElementById(build-${selectedAction}) || 
+                                          document.getElementById('cleanup');
+                    if (selectedButton) {
+                        selectedButton.style.opacity = '0.7';
+                        selectedButton.style.transform = 'scale(0.98)';
+                    }
+                }
+            }
+            
+            // Next turn logic
+            function nextTurn() {
+                gameState.turn++;
+                
+                // Simulate random events
+                if (Math.random() > 0.7) {
+                    // Add some pollution or other challenge
+                    const carbonIncrease = Math.floor(Math.random() * 10) + 5;
+                    gameState.carbon += carbonIncrease;
+                    gameState.score -= carbonIncrease;
+                    
+                    // Randomly pollute a cell
+                    const cells = document.querySelectorAll('.game-cell.buildable');
+                    if (cells.length > 0) {
+                        const randomCell = cells[Math.floor(Math.random() * cells.length)];
+                        randomCell.classList.remove('buildable');
+                        randomCell.classList.add('polluted');
+                        randomCell.innerHTML = '<div class="building-icon">🏭</div>';
+                    }
+                    
+                    showMessage(Industrial expansion nearby! Carbon footprint increased by ${carbonIncrease}%);
+                }
+                
+                // Calculate research and energy gains
+                let researchGain = 50; // Base research
+                let energyGain = 100; // Base energy
+                
+                // Add gains from buildings
+                gameState.buildings.forEach(building => {
+                    if (building.type === 'lab') {
+                        researchGain += building.researchOutput;
+                    }
+                    if (building.type === 'wind' || building.type === 'solar') {
+                        energyGain += building.energyOutput;
+                    }
+                });
+                
+                gameState.research += researchGain;
+                gameState.energy = energyGain;
+                
+                // Update biodiversity based on green spaces
+                let biodiversityChange = 0;
+                gameState.buildings.forEach(building => {
+                    if (building.type === 'garden') {
+                        biodiversityChange += 2;
+                    }
+                });
+                
+                gameState.biodiversity += biodiversityChange;
+                if (gameState.biodiversity > 100) gameState.biodiversity = 100;
+                
+                // Check for game over conditions
+                if (gameState.carbon > 80) {
+                    alert('Game Over! Extreme carbon levels make your campus unsustainable.');
+                    resetGame();
+                    return;
+                }
+                
+                if (gameState.budget < 0) {
+                    alert('Game Over! You have run out of budget for sustainability initiatives.');
+                    resetGame();
+                    return;
+                }
+                
+                // Add budget based on score
+                gameState.budget += Math.floor(gameState.score / 10);
+                
+                updateUI();
+                showMessage(New semester began! Gained ${researchGain} research points and $${Math.floor(gameState.score / 10)} budget.);
+            }
+            
+            // Show message
+            function showMessage(message) {
+                const messageBox = document.createElement('div');
+                messageBox.style.position = 'fixed';
+                messageBox.style.bottom = '20px';
+                messageBox.style.left = '50%';
+                messageBox.style.transform = 'translateX(-50%)';
+                messageBox.style.backgroundColor = '#2E8B57';
+                messageBox.style.color = 'white';
+                messageBox.style.padding = '10px 20px';
+                messageBox.style.borderRadius = '5px';
+                messageBox.style.zIndex = '1000';
+                messageBox.style.boxShadow = '0 3px 10px rgba(0,0,0,0.2)';
+                messageBox.textContent = message;
+                
+                document.body.appendChild(messageBox);
+                
+                setTimeout(() => {
+                    document.body.removeChild(messageBox);
+                }, 3000);
+            }
+            
+            // Reset game
+            function resetGame() {
+                gameState.score = 100;
+                gameState.energy = 500;
+                gameState.carbon = 15;
+                gameState.biodiversity = 75;
+                gameState.research = 250;
+                gameState.budget = 10000;
+                gameState.selectedAction = null;
+                gameState.buildings = [];
+                gameState.turn = 1;
+                
+                initializeGameBoard();
+                updateUI();
+                updateActionButtons(null);
+                buildingDetails.innerHTML = '<p>Select a building to view details</p>';
+            }
+            
+            // Update UI
+            function updateUI() {
+                scoreElement.textContent = gameState.score;
+                energyElement.textContent = ${gameState.energy} MW;
+                carbonElement.textContent = ${gameState.carbon}%;
+                biodiversityElement.textContent = ${gameState.biodiversity}%;
+                researchElement.textContent = gameState.research;
+                budgetElement.textContent = $${gameState.budget.toLocaleString()};
+            }
+            
+            // Initialize the game
+            initializeGameBoard();
+            updateUI();
+        });
+    </script>
+</body>
+</html>
